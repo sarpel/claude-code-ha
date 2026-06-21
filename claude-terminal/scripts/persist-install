@@ -1,0 +1,272 @@
+#!/bin/bash
+
+# User-friendly command for installing packages persistently
+# Usage: persist-install python git vim
+
+PERSIST_ROOT="/data/packages"
+PERSIST_BIN="$PERSIST_ROOT/bin"
+PERSIST_PYTHON="$PERSIST_ROOT/python"
+
+show_help() {
+    cat << EOF
+🔧 Persistent Package Installer
+
+Install packages that survive container restarts!
+
+USAGE:
+    persist-install <package1> [package2] [...]
+    persist-install --python <package1> [package2] [...]
+    persist-install --ha-cli
+    persist-install --list
+    persist-install --help
+
+EXAMPLES:
+    persist-install git vim htop          # Install system packages
+    persist-install --python requests pandas  # Install Python packages
+    persist-install --ha-cli              # Install Home Assistant CLI
+    persist-install --list                # Show installed packages
+
+NOTES:
+    • Packages are installed to: /data/packages (persistent storage)
+    • Survives container restarts and reboots
+    • System packages copied from Alpine APK
+    • Python packages installed to virtual environment
+    • Home Assistant CLI downloaded from official GitHub releases
+
+QUICK START:
+    1. persist-install python3 py3-pip    # Install Python (first time)
+    2. persist-install --ha-cli           # Install official HA CLI
+    3. Reboot and enjoy! Packages will still be there!
+
+EOF
+}
+
+list_packages() {
+    echo "=== 📦 Persistent Packages ==="
+    echo ""
+    echo "📁 Location: $PERSIST_ROOT"
+    echo ""
+
+    echo "🔧 System Binaries ($PERSIST_BIN):"
+    if [ -d "$PERSIST_BIN" ] && [ "$(ls -A $PERSIST_BIN 2>/dev/null)" ]; then
+        ls -1 "$PERSIST_BIN" | sed 's/^/  • /'
+    else
+        echo "  (none installed)"
+    fi
+    echo ""
+
+    echo "🐍 Python Packages ($PERSIST_PYTHON/venv):"
+    if [ -f "$PERSIST_PYTHON/venv/bin/pip" ]; then
+        source "$PERSIST_PYTHON/venv/bin/activate"
+        pip list --format=columns | tail -n +3 | sed 's/^/  • /'
+    else
+        echo "  (virtual environment not created)"
+        echo "  Run: persist-install python3 py3-pip"
+    fi
+    echo ""
+
+    echo "💾 Total size:"
+    du -sh "$PERSIST_ROOT" 2>/dev/null || echo "  0B"
+}
+
+install_system_packages() {
+    local packages="$@"
+
+    echo "📦 Installing system packages: $packages"
+    echo ""
+
+    # Install via APK first
+    echo "⏳ Installing via APK..."
+    if ! apk add --no-cache $packages; then
+        echo "❌ Failed to install packages"
+        exit 1
+    fi
+
+    # Copy to persistent storage
+    echo "💾 Copying to persistent storage..."
+    mkdir -p "$PERSIST_BIN" "$PERSIST_ROOT/lib"
+
+    for pkg in $packages; do
+        echo "  Processing: $pkg"
+
+        # Get list of files installed by package
+        apk info -L "$pkg" 2>/dev/null | while read -r file; do
+            # Copy executables
+            if [[ "$file" == /usr/bin/* ]] || [[ "$file" == /usr/sbin/* ]] || [[ "$file" == /bin/* ]]; then
+                if [ -f "$file" ] && [ -x "$file" ]; then
+                    cp -a "$file" "$PERSIST_BIN/" 2>/dev/null && echo "    ✓ $(basename $file)"
+                fi
+            fi
+
+            # Copy shared libraries
+            if [[ "$file" == /usr/lib/* ]] && [[ "$file" == *.so* ]]; then
+                if [ -f "$file" ]; then
+                    cp -a "$file" "$PERSIST_ROOT/lib/" 2>/dev/null
+                fi
+            fi
+        done
+    done
+
+    echo ""
+    echo "✅ System packages installed and persisted!"
+    echo "💡 These packages will survive container restarts"
+}
+
+install_python_packages() {
+    local packages="$@"
+
+    echo "🐍 Installing Python packages: $packages"
+    echo ""
+
+    # Ensure Python and venv exist
+    if [ ! -f "$PERSIST_PYTHON/venv/bin/python" ]; then
+        echo "⚠️  Python virtual environment not found"
+        echo "📥 Creating virtual environment..."
+
+        # Check if system Python exists
+        if ! command -v python3 &>/dev/null; then
+            echo "❌ Python not installed. Installing..."
+            install_system_packages python3 py3-pip
+        fi
+
+        mkdir -p "$PERSIST_PYTHON"
+        python3 -m venv "$PERSIST_PYTHON/venv"
+        echo "✅ Virtual environment created"
+        echo ""
+    fi
+
+    # Activate and install
+    source "$PERSIST_PYTHON/venv/bin/activate"
+
+    echo "⏳ Installing packages..."
+    pip install --upgrade pip -q
+    pip install $packages
+
+    echo ""
+    echo "✅ Python packages installed!"
+    echo "💡 Use 'source $PERSIST_PYTHON/venv/bin/activate' to activate venv"
+}
+
+install_ha_cli() {
+    local HA_VERSION="4.42.0"
+    local BASE_URL="https://github.com/home-assistant/cli/releases/download/${HA_VERSION}"
+
+    # Detect architecture
+    local machine=$(uname -m)
+    local arch=""
+
+    case "$machine" in
+        x86_64)     arch="amd64" ;;
+        aarch64)    arch="aarch64" ;;
+        armv7l)     arch="armv7" ;;
+        armv6l)     arch="armhf" ;;
+        i386|i686)  arch="i386" ;;
+        *)
+            echo "❌ Unsupported architecture: $machine"
+            return 1
+            ;;
+    esac
+
+    local download_url="${BASE_URL}/ha_${arch}"
+    local target_path="${PERSIST_BIN}/ha"
+
+    echo "🏠 Installing Home Assistant CLI v${HA_VERSION}"
+    echo "📦 Architecture: ${arch}"
+    echo ""
+
+    # Check if already installed
+    if [ -x "${target_path}" ]; then
+        echo "ℹ️  Home Assistant CLI is already installed"
+        "${target_path}" --version
+        return 0
+    fi
+
+    # Create directory
+    mkdir -p "$PERSIST_BIN"
+
+    # Download
+    echo "⏳ Downloading from GitHub..."
+    if ! curl -fsSL -o "${target_path}" "${download_url}"; then
+        echo "❌ Failed to download ha CLI binary"
+        return 1
+    fi
+
+    # Make executable
+    chmod +x "${target_path}"
+
+    # Verify file was downloaded and is executable
+    if [ ! -x "${target_path}" ]; then
+        echo "❌ Binary is not executable"
+        rm -f "${target_path}"
+        return 1
+    fi
+
+    # Check file size (should be > 1MB)
+    local size=$(stat -f%z "${target_path}" 2>/dev/null || stat -c%s "${target_path}" 2>/dev/null || echo "0")
+    if [ "$size" -lt 1000000 ]; then
+        echo "❌ Downloaded file is too small (${size} bytes)"
+        rm -f "${target_path}"
+        return 1
+    fi
+
+    echo ""
+    echo "✅ Home Assistant CLI installed successfully!"
+    echo "📦 Binary size: $((size / 1024 / 1024)) MB"
+    echo "📍 Location: ${target_path}"
+    echo ""
+
+    # Try to get version (may fail if supervisor not accessible, but that's OK)
+    echo "🔍 Testing ha command..."
+    if "${target_path}" --version 2>&1 | head -5; then
+        echo ""
+    else
+        echo "⚠️  Note: 'ha --version' returned an error, but the binary is installed."
+        echo "   This is normal if supervisor API is not accessible yet."
+        echo "   Try: ha core info"
+    fi
+
+    echo ""
+    echo "💡 Try these commands:"
+    echo "   ha core info"
+    echo "   ha addons list"
+    echo "   ha supervisor info"
+}
+
+# Main execution
+main() {
+    # Check if running in the add-on
+    if [ ! -d "/data" ]; then
+        echo "❌ Error: /data directory not found"
+        echo "This script must run inside the Claude Terminal add-on"
+        exit 1
+    fi
+
+    case "${1:-}" in
+        --help|-h|help)
+            show_help
+            ;;
+        --list|-l|list)
+            list_packages
+            ;;
+        --python|-p|python)
+            shift
+            if [ $# -eq 0 ]; then
+                echo "❌ Error: No packages specified"
+                echo "Usage: persist-install --python <package1> [package2] ..."
+                exit 1
+            fi
+            install_python_packages "$@"
+            ;;
+        --ha-cli|ha-cli|ha)
+            install_ha_cli
+            ;;
+        "")
+            show_help
+            ;;
+        *)
+            install_system_packages "$@"
+            ;;
+    esac
+}
+
+main "$@"
