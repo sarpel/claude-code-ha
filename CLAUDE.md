@@ -43,7 +43,9 @@ What the terminal launches is decided by `get_claude_launch_command()` from the 
 
 > The older `/config/claude-config` and `HOME=/root` paths are **legacy**. `migrate_legacy_auth_files()` still one-time-migrates auth from those locations into `/data/.config/claude`, but new code should target `/data`.
 
-Beyond Claude Code, the Dockerfile also bakes in the Home Assistant CLI (`ha`) and GitHub CLI (`gh`), both fetched at build time for the target arch from their latest GitHub releases. Multi-arch: `aarch64`, `amd64`, `armv7` off `ghcr.io/home-assistant/{arch}-base:3.19`.
+Beyond Claude Code, the Dockerfile also bakes in the Home Assistant CLI (`ha`) and GitHub CLI (`gh`), both fetched at build time for the target arch from their latest GitHub releases. Multi-arch: `aarch64`, `amd64`, `armv7` off `ghcr.io/home-assistant/{arch}-base:3.21`.
+
+> **Base image must stay ≥ 3.20 (musl ≥ 1.2.5).** Current Claude Code binaries reference the `statx` symbol, which Alpine 3.19's musl 1.2.4 does not export — on a 3.19 base both the native installer binary and the npm-delivered binary fail at launch with `Error relocating … statx: symbol not found` (verified on-device: 3.19/musl-1.2.4 fails, 3.20/3.21/3.22 with musl-1.2.5 run `claude --version` fine). This was the real cause of "Claude won't start / stuck on an old version" — not the build cache. Note: Claude Code ships no `armv7`/arm32 binary, so that arch cannot run Claude regardless of base.
 
 ## Persistent Package Management — Behavioral Rule
 
@@ -68,7 +70,7 @@ Dev shell is Nix-based (`flake.nix`); `nix develop` (or `direnv allow`) provides
 
 Manual local build/test loop (no aliases):
 ```bash
-podman build --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.19 -t local/claude-terminal:test ./claude-terminal
+podman build --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.21 -t local/claude-terminal:test ./claude-terminal
 mkdir -p /tmp/test-config/claude-config
 podman run -d --name test-claude-dev -p 7681:7681 -v /tmp/test-config:/config local/claude-terminal:test
 podman logs -f test-claude-dev          # web UI at http://localhost:7681

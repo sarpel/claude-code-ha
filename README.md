@@ -39,7 +39,6 @@ A Home Assistant add-on that runs Anthropic's **Claude Code CLI** inside a web-b
 - [Add-on documentation](claude-terminal/DOCS.md) — usage, configuration, troubleshooting
 - [Persistent packages](claude-terminal/PERSISTENT_PACKAGES.md)
 - [Image paste](claude-terminal/IMAGE_PASTE.md)
-- [Development guide](DEVELOPMENT.md)
 
 ## License
 
