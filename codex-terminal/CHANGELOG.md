@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+### 🛠️ Improvement - Bigger, nicer terminal typography
+- **Font size 13 → 15**: ttyd's own default of 13px read too small inside the dashboard iframe.
+- **Ubuntu Mono, bundled**: the font is rendered by the *browser*, not the container, so it is now self-hosted — the image is built with `UbuntuMono-Regular/Bold.ttf` (Ubuntu Font Licence) under `image-service/public/fonts/`, and the image-service injects the matching `@font-face` into the ttyd page before xterm.js initialises. A `resize` event after `document.fonts.ready` makes xterm re-measure with the real font metrics.
+- **Fallback chain**: if the font fails to download at build time, the terminal falls back to `Cascadia Mono → DejaVu Sans Mono → Consolas → Liberation Mono → Menlo → monospace`, so nothing breaks.
+
 ## 1.0.3
 
 ### 🐛 Bug Fix - Add-on restart loop when `persistent_apk_packages` / `persistent_pip_packages` is set

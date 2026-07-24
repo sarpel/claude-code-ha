@@ -95,6 +95,21 @@ RUN cd /opt/image-service \
     && npm cache clean --force \
     && chmod +x server.js
 
+# Bundle Ubuntu Mono for the terminal.
+# The font is rendered by the browser, not the container, so it has to be
+# self-hosted and served to the client - the image-service injects an
+# @font-face rule into the ttyd page (see server.js).
+# Licence: Ubuntu Font Licence 1.0 (redistribution permitted); UFL.txt ships
+# alongside the fonts. A download failure is not fatal: the terminal then falls
+# back to the local monospace stack configured in run.sh.
+RUN mkdir -p /opt/image-service/public/fonts \
+    && for f in UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf UFL.txt; do \
+         curl -fsSL -o "/opt/image-service/public/fonts/$f" \
+           "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntumono/$f" \
+         || echo "WARNING: could not fetch $f - terminal will use fallback fonts"; \
+       done \
+    && ls -l /opt/image-service/public/fonts/
+
 # Copy startup script, modular scripts, and Codex global instructions
 COPY run.sh /run.sh
 COPY scripts/ /opt/scripts/

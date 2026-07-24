@@ -19,7 +19,29 @@ const http = require('http');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middleware');
+
+// Markup injected into the ttyd page so the terminal can use a self-hosted font.
+// The font is resolved by the browser, so shipping it in the container is only
+// useful if it is served to the client - hence the @font-face below, pointing at
+// public/fonts (relative to /terminal/, which keeps it working behind the
+// Home Assistant ingress path prefix).
+// xterm.js measures character size once at startup; the resize event after
+// document.fonts.ready makes it re-measure with the real font metrics.
+const TERMINAL_HEAD_INJECTION = `
+<style>
+@font-face{font-family:'Ubuntu Mono';src:url('../fonts/UbuntuMono-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block}
+@font-face{font-family:'Ubuntu Mono';src:url('../fonts/UbuntuMono-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:block}
+</style>
+<script>
+(function(){
+  if (!document.fonts || !document.fonts.ready) return;
+  document.fonts.ready.then(function(){
+    setTimeout(function(){ window.dispatchEvent(new Event('resize')); }, 50);
+  });
+})();
+</script>
+`;
 
 const app = express();
 const PORT = process.env.IMAGE_SERVICE_PORT || 7680;
@@ -104,6 +126,24 @@ app.use('/terminal', createProxyMiddleware({
     pathRewrite: {
         '^/terminal': '' // Remove /terminal prefix when forwarding
     },
+    // Inject the font definitions into ttyd's HTML before it reaches the
+    // browser. Doing it server-side (rather than from the parent page after
+    // load) means the @font-face exists before xterm.js initialises.
+    selfHandleResponse: true,
+    onProxyRes: responseInterceptor(async (responseBuffer, proxyRes) => {
+        const contentType = proxyRes.headers['content-type'] || '';
+        if (!contentType.includes('text/html')) {
+            return responseBuffer;
+        }
+
+        const html = responseBuffer.toString('utf8');
+        if (!html.includes('</head>')) {
+            console.warn('ttyd page has no </head>; skipping font injection');
+            return responseBuffer;
+        }
+
+        return html.replace('</head>', `${TERMINAL_HEAD_INJECTION}</head>`);
+    }),
     onError: (err, req, res) => {
         console.error('Proxy error:', err.message);
         // res may be a raw socket (WebSocket) instead of an Express response

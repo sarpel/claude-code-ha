@@ -435,15 +435,22 @@ start_web_terminal() {
     # Start the image upload service first
     start_image_service
 
-    # Run ttyd with keepalive and reconnect configuration
+    # Run ttyd with keepalive, reconnect and typography configuration
     # --ping-interval 30: WebSocket ping every 30s (default 300s) to prevent idle disconnects
     # --client-option reconnect=5: xterm.js auto-reconnect after 5 seconds on disconnect
+    # --client-option fontSize=15: ttyd's own default is 13, which reads small in
+    #   the dashboard iframe
+    # --client-option fontFamily: Ubuntu Mono is served by the image-service
+    #   (see server.js), the rest is a fallback chain of fonts commonly present
+    #   on Windows/macOS/Linux clients
     exec ttyd \
         --port "${port}" \
         --interface 0.0.0.0 \
         --writable \
         --ping-interval 30 \
         --client-option reconnect=5 \
+        --client-option fontSize=15 \
+        --client-option "fontFamily=Ubuntu Mono, Cascadia Mono, DejaVu Sans Mono, Consolas, Liberation Mono, Menlo, monospace" \
         bash -c "$launch_command"
 }
 
