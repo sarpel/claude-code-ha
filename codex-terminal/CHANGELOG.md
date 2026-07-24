@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+### 🛠️ Improvement - Own artwork
+- **Distinct icon and logo**: `icon.png` (128×128) and `logo.png` (256×256) now show the OpenAI mark in OpenAI teal on a transparent background instead of the artwork copied from Claude Terminal Pro, so the two sidebar panels are told apart at a glance in both light and dark themes.
+
 ## 1.0.1
 
 ### 🔧 Technical - Hardening and correctness fixes
