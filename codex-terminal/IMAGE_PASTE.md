@@ -162,7 +162,7 @@ Potential features for future versions:
 
 ## Changelog
 
-### v1.6.0 (2024-11-23)
+### v1.0.0 (2026-07-24)
 - Initial release of image paste feature
 - Support for paste, drag-drop, and button upload
 - Lightweight Node.js service (~10MB RAM)

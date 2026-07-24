@@ -8,14 +8,15 @@ olarak, neredeyse aynı özelliklerle.
 - YENİ: `codex-terminal/**` (tam eklenti: config, build, Dockerfile, run.sh, scripts, image-service, dokümanlar)
 - DEĞİŞİR: `README.md` (kök — iki eklentiyi listele)
 - DEĞİŞİR: `CLAUDE.md` (ikinci eklenti notu)
-- DEĞİŞMEZ: `claude-terminal/**`, `repository.yaml`
+- DEĞİŞİR: `repository.yaml` (depo adı iki eklentiyi kapsayacak şekilde)
+- DEĞİŞMEZ: `claude-terminal/**`
 
 ## Sıralı görevler
 - [x] 1. Mevcut eklentinin tüm dosyalarını oku (config, Dockerfile, run.sh, scripts, image-service, docs)
 - [x] 2. Codex CLI kurulum/auth/CODEX_HOME/bayrak bilgilerini doğrula (Context7 + GitHub release asset listesi)
 - [x] 3. Tasarım dokümanı yaz (`docs/superpowers/specs/2026-07-24-codex-terminal-addon-design.md`)
 - [x] 4. Dizin iskeleti + verbatim kopyalar (icon.png, logo.png, install-ha-cli.sh, ha-api-examples.sh, persistent-packages.sh)
-- [x] 5. `config.yaml`, `build.yaml` (slug codex_terminal_pro, v1.0.0, aarch64+amd64, host port 7690/7691)
+- [x] 5. `config.yaml`, `build.yaml` (slug codex_terminal_pro, v1.0.0, aarch64+amd64, ingress-only — host portu yayınlanmıyor)
 - [x] 6. `Dockerfile` (musl release ikilisi + npm fallback, cache-bust, ha/gh CLI blokları)
 - [x] 7. `run.sh` (CODEX_HOME, persistent override, API key login, launch command)
 - [x] 8. `scripts/codex-session-picker.sh` + `scripts/codex-auth-helper.sh` + `scripts/health-check.sh` + `scripts/persist-install`

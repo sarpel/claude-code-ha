@@ -119,9 +119,16 @@ persistent_pip_packages:
 
 4. **Save** and **Restart** the add-on
 
-### Via config file (Advanced)
+### Inspecting the generated config (Advanced)
 
-Edit `/config/codex-terminal/options.json`:
+The Supervisor writes the options you set in the UI to `/data/options.json` inside
+the add-on container. It is a **read-only reflection** of the UI configuration —
+the Supervisor regenerates it on every start, so hand-edits are lost. Use it to
+verify what the add-on actually received:
+
+```bash
+cat /data/options.json
+```
 
 ```json
 {

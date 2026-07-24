@@ -44,7 +44,7 @@ Same stack as Claude Terminal Pro (web terminal, persistent auth/packages, image
 - **Codex CLI** installed as a static musl binary from GitHub releases (npm fallback); architectures `amd64` and `aarch64`
 - **Persistent auth & sessions** in `/data/.config/codex` (`CODEX_HOME`)
 - **Headless login** via the `openai_api_key` option or the built-in auth helper
-- **Side-by-side** with Claude Terminal Pro — Codex uses host ports 7690/7691
+- **Side-by-side** with Claude Terminal Pro — Codex is ingress-only (no host ports published), so there is no conflict
 
 | Option | Default | Description |
 | --- | --- | --- |

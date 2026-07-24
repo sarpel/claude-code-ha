@@ -215,9 +215,13 @@ install_ha_cli() {
     echo "📍 Location: ${target_path}"
     echo ""
 
-    # Try to get version (may fail if supervisor not accessible, but that's OK)
+    # Try to get version (may fail if supervisor not accessible, but that's OK).
+    # Capture first, then print: piping into head would report head's exit
+    # status, so the warning branch below could never be reached.
     echo "🔍 Testing ha command..."
-    if "${target_path}" --version 2>&1 | head -5; then
+    local version_output
+    if version_output=$("${target_path}" --version 2>&1); then
+        echo "$version_output" | head -5
         echo ""
     else
         echo "⚠️  Note: 'ha --version' returned an error, but the binary is installed."

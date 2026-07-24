@@ -1,7 +1,7 @@
 ---
 name: "Codex Terminal Pro"
 description: "Enhanced terminal interface for OpenAI's Codex CLI with persistent auth, package management, and image paste support."
-version: "1.0.0"
+version: "1.0.1"
 slug: "codex_terminal_pro"
 init: false
 
@@ -20,15 +20,12 @@ panel_icon: mdi:console-line
 panel_title: "Codex Terminal Pro"
 panel_admin: true
 
-# Port configuration
-# Host ports differ from Claude Terminal Pro (7680/7681) so both add-ons can
-# expose their services at the same time. Container-internal ports stay 7680/7681.
-ports:
-  7680/tcp: 7690
-  7681/tcp: 7691
-ports_description:
-  7680/tcp: "Image upload service and web interface"
-  7681/tcp: "ttyd terminal (embedded in web interface)"
+# No host port mappings on purpose.
+# The web interface (container port 7680) is reachable through Home Assistant
+# ingress only; ttyd (7681) runs unauthenticated behind it, so publishing either
+# port on the host would expose a writable root terminal to the local network.
+# Ingress also gives each add-on its own panel, so Claude Terminal Pro and
+# Codex Terminal Pro can run side by side without any port remapping.
 
 # Add-on configuration options
 options:
@@ -63,6 +60,3 @@ auth_api: true
 
 # Service startup configuration
 startup: services
-
-# Web UI access URL
-webui: http://[HOST]:[PORT:7680]/

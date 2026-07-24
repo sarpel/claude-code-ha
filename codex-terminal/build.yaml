@@ -8,4 +8,4 @@ labels:
   org.opencontainers.image.source: "https://github.com/sarpel/claude-code-ha"
   org.opencontainers.image.licenses: "MIT"
 
-  org.opencontainers.image.version: "1.0.0"
+  org.opencontainers.image.version: "1.0.1"

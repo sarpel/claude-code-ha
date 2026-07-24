@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1
+
+### 🔧 Technical - Hardening and correctness fixes
+- **No host ports published**: the `7690`/`7691` host mappings (and the `webui` link that depended on them) were removed. `ttyd` runs `--writable` without credentials, so publishing it exposed a root terminal to the local network; the add-on is reachable through Home Assistant ingress only. Side-by-side operation with Claude Terminal Pro is unaffected — each add-on has its own ingress panel.
+- **Image service health check now watches the right process**: `$!` captured the log-reader subshell instead of `node`, so a crashed image service was still reported as running. Output is now forwarded through a process substitution.
+- **`install-ha-cli.sh` validates before executing**: an unsupported architecture no longer builds a broken download URL (the `detect_arch` failure was masked by `local`), and the downloaded binary must pass the same size sanity check `persist-install` uses before it is made executable.
+- **`persist-install --ha-cli` reports version failures again**: the smoke test piped into `head`, so the check always saw `head`'s exit status and the warning branch was unreachable.
+- **`persistent-packages.sh` no longer aborts startup**: a failing package install is logged and skipped instead of killing the script through `set -e`, and the command dispatch is guarded so sourcing the file only defines its helpers.
+
+### 📚 Documentation
+- Corrected the API-key login example (`printenv OPENAI_API_KEY`), the add-on options path (Supervisor-generated `/data/options.json`, read-only), and the image-paste changelog date.
+
 ## 1.0.0
 
 ### ✨ New Feature - Initial release of Codex Terminal Pro

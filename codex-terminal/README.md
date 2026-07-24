@@ -36,7 +36,7 @@ The terminal opens in `/config`, so Codex can read and edit your Home Assistant 
 
 Codex supports two account types:
 
-- **OpenAI API key** (recommended in containers) — set the `openai_api_key` add-on option, or use the session picker's auth helper, or run `printenv KEY | codex login --with-api-key` manually. Credentials persist in `/data/.config/codex/auth.json`.
+- **OpenAI API key** (recommended in containers) — set the `openai_api_key` add-on option, or use the session picker's auth helper, or run `printenv OPENAI_API_KEY | codex login --with-api-key` manually. Credentials persist in `/data/.config/codex/auth.json`.
 - **ChatGPT plan login** (`codex login`) — uses a browser OAuth flow that redirects to `localhost:1455`, which cannot traverse Home Assistant ingress. It only works with SSH port forwarding; the auth helper explains the steps.
 
 ## Configuration
@@ -57,7 +57,7 @@ See [DOCS.md](DOCS.md) for full details and examples.
 
 ## How it works
 
-- **Web UI / terminal** — port `7680` (container) serves the web interface (image upload + embedded terminal) over Home Assistant ingress; `ttyd` runs the terminal on `7681` behind it. Host ports are mapped to `7690`/`7691` so Claude Terminal Pro can run at the same time.
+- **Web UI / terminal** — port `7680` (container) serves the web interface (image upload + embedded terminal) over Home Assistant ingress; `ttyd` runs the terminal on `7681` behind it. Neither port is published on the host — access goes through ingress only, so the terminal is never exposed to the local network, and Claude Terminal Pro can run at the same time (each add-on gets its own ingress panel).
 - **Persistence** — everything that must survive restarts lives under `/data`: credentials and sessions (`/data/.config/codex`), installed packages (`/data/packages`), uploaded images (`/data/images`), and the optional Codex override (`/data/home/.local/bin`).
 - **Pre-installed tools** — `git`, `gh` (GitHub CLI), `ha` (Home Assistant CLI), `ripgrep`, Python 3, and the `persist-install` helper.
 
