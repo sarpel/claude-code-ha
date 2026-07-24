@@ -1,7 +1,7 @@
 ---
 name: "Claude Terminal Pro"
 description: "Enhanced terminal interface for Anthropic's Claude Code CLI with persistent auth, package management, and image paste support."
-version: "2.1.1"
+version: "2.1.2"
 slug: "claude_terminal_pro"
 init: false
 
@@ -21,13 +21,10 @@ panel_icon: mdi:code-braces-box
 panel_title: "Claude Terminal Pro"
 panel_admin: true
 
-# Port configuration
-ports:
-  7680/tcp: 7680
-  7681/tcp: 7681
-ports_description:
-  7680/tcp: "Image upload service and web interface"
-  7681/tcp: "ttyd terminal (embedded in web interface)"
+# No host port mappings on purpose.
+# The web interface (container port 7680) is reachable through Home Assistant
+# ingress only; ttyd (7681) runs unauthenticated behind it, so publishing either
+# port on the host would expose a writable root terminal to the local network.
 
 # Add-on configuration options
 options:
@@ -62,6 +59,3 @@ auth_api: true
 
 # Service startup configuration
 startup: services
-
-# Web UI access URL
-webui: http://[HOST]:[PORT:7680]/

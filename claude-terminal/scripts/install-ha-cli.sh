@@ -38,7 +38,14 @@ detect_arch() {
 
 # Install ha CLI binary
 install_ha_cli() {
-    local arch=$(detect_arch)
+    local arch
+    # Do not inline this into the declaration: 'local arch=$(...)' masks the
+    # exit status, so an unsupported architecture would silently build a
+    # download URL like ".../ha_".
+    if ! arch=$(detect_arch); then
+        return 1
+    fi
+
     local download_url="${BASE_URL}/ha_${arch}"
     local target_path="${PERSIST_BIN}/ha"
 
@@ -51,6 +58,17 @@ install_ha_cli() {
     bashio::log.info "Downloading from: ${download_url}"
     if ! curl -fsSL -o "${target_path}" "${download_url}"; then
         bashio::log.error "Failed to download ha CLI binary"
+        return 1
+    fi
+
+    # Sanity-check the download before making it executable: a truncated file or
+    # an HTML error page would otherwise be marked executable and run.
+    # Same threshold as persist-install's install_ha_cli().
+    local size
+    size=$(stat -f%z "${target_path}" 2>/dev/null || stat -c%s "${target_path}" 2>/dev/null || echo "0")
+    if [ "$size" -lt 1000000 ]; then
+        bashio::log.error "Downloaded file is too small (${size} bytes) - aborting"
+        rm -f "${target_path}"
         return 1
     fi
 

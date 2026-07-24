@@ -114,12 +114,15 @@ auto_install_packages() {
     local apk_packages=$(bashio::config 'persistent_apk_packages' '[]')
     local pip_packages=$(bashio::config 'persistent_pip_packages' '[]')
 
-    # Parse and install APK packages
+    # Parse and install APK packages.
+    # Failures are handled here (|| ...) so 'set -e' cannot abort startup: a
+    # single bad package name must not stop the remaining installation steps.
     if [ "$apk_packages" != "[]" ] && [ "$apk_packages" != "" ]; then
         bashio::log.info "Auto-installing APK packages from config..."
         local pkg_list=$(echo "$apk_packages" | jq -r '.[]' | tr '\n' ' ')
         if [ -n "$pkg_list" ]; then
-            persist_apk_install $pkg_list
+            persist_apk_install $pkg_list \
+                || bashio::log.warning "APK auto-install failed for: $pkg_list (continuing)"
         fi
     fi
 
@@ -128,7 +131,8 @@ auto_install_packages() {
         bashio::log.info "Auto-installing Python packages from config..."
         local pkg_list=$(echo "$pip_packages" | jq -r '.[]' | tr '\n' ' ')
         if [ -n "$pkg_list" ]; then
-            persist_pip_install $pkg_list
+            persist_pip_install $pkg_list \
+                || bashio::log.warning "Python auto-install failed for: $pkg_list (continuing)"
         fi
     fi
 }
@@ -145,30 +149,39 @@ list_persistent_packages() {
     pip list
 }
 
-# Main execution when sourced
-case "${1:-init}" in
-    init)
-        init_persistent_storage
-        setup_environment
-        auto_install_packages
-        ;;
-    install-apk)
-        shift
-        persist_apk_install "$@"
-        ;;
-    install-pip)
-        shift
-        persist_pip_install "$@"
-        ;;
-    list)
-        list_persistent_packages
-        ;;
-    env)
-        setup_environment
-        ;;
-    *)
-        bashio::log.error "Unknown command: $1"
-        echo "Usage: $0 {init|install-apk|install-pip|list|env}"
-        exit 1
-        ;;
-esac
+# Main execution
+main() {
+    case "${1:-init}" in
+        init)
+            init_persistent_storage
+            setup_environment
+            auto_install_packages
+            ;;
+        install-apk)
+            shift
+            persist_apk_install "$@"
+            ;;
+        install-pip)
+            shift
+            persist_pip_install "$@"
+            ;;
+        list)
+            list_persistent_packages
+            ;;
+        env)
+            setup_environment
+            ;;
+        *)
+            bashio::log.error "Unknown command: $1"
+            echo "Usage: $0 {init|install-apk|install-pip|list|env}"
+            exit 1
+            ;;
+    esac
+}
+
+# Run only when executed directly; sourcing this file just defines the helpers
+# (persist_apk_install, persist_pip_install, setup_environment, ...) without
+# triggering storage initialization or auto-install.
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    main "$@"
+fi

@@ -378,9 +378,13 @@ start_image_service() {
 
     # Start with better error logging (run from current directory with absolute path)
     bashio::log.info "Starting Node.js service from ${server_file}..."
-    node "${server_file}" 2>&1 | while IFS= read -r line; do
+    # Output is forwarded through a process substitution instead of a pipeline so
+    # that $! is the node PID itself; with a pipeline it would be the log-reader
+    # subshell, which stays alive even after node dies and would make the health
+    # check below always succeed.
+    node "${server_file}" > >(while IFS= read -r line; do
         bashio::log.info "[Image Service] $line"
-    done &
+    done) 2>&1 &
 
     # Store the PID for potential cleanup
     local image_service_pid=$!

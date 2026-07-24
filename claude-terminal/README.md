@@ -52,7 +52,7 @@ See [DOCS.md](DOCS.md) for full details and examples.
 
 ## How it works
 
-- **Web UI / terminal** — port `7680` serves the web interface (image upload + embedded terminal) over Home Assistant ingress; `ttyd` runs the terminal on `7681` behind it.
+- **Web UI / terminal** — port `7680` (container) serves the web interface (image upload + embedded terminal) over Home Assistant ingress; `ttyd` runs the terminal on `7681` behind it. Neither port is published on the host — access goes through ingress only, so the writable terminal is never exposed to the local network.
 - **Persistence** — everything that must survive restarts lives under `/data`: OAuth credentials (`/data/.config/claude`), installed packages (`/data/packages`), uploaded images (`/data/images`), and the optional Claude override (`/data/home/.local/bin`).
 - **Pre-installed tools** — `git`, `gh` (GitHub CLI), `ha` (Home Assistant CLI), Python 3, and the `persist-install` helper.
 
