@@ -42,6 +42,7 @@ All options are optional; the add-on works out of the box.
 | --- | --- | --- |
 | `auto_launch_claude` | `true` | Auto-start Claude, or show the session picker when `false` |
 | `dangerously_skip_permissions` | `false` | Run Claude with unrestricted file access |
+| `persistent_terminal_session` | `true` | Keep the CLI running in a tmux session so a dropped connection (closed or backgrounded dashboard) resumes instead of restarting |
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
 | `use_persistent_claude` | `false` | Use a self-updating Claude Code install kept in `/data/home/.local/bin` |

@@ -48,6 +48,7 @@ All options are optional; the add-on works out of the box (you still need to aut
 | `auto_launch_codex` | `true` | Auto-start Codex, or show the session picker when `false` |
 | `dangerously_bypass_approvals` | `false` | Run Codex with `--dangerously-bypass-approvals-and-sandbox` |
 | `openai_api_key` | `""` | If set, logs in with this API key on startup (skipped when already logged in) |
+| `persistent_terminal_session` | `true` | Keep the CLI running in a tmux session so a dropped connection (closed or backgrounded dashboard) resumes instead of restarting |
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
 | `use_persistent_codex` | `false` | Use a self-updating Codex CLI kept in `/data/home/.local/bin` |

@@ -355,6 +355,75 @@ get_codex_launch_command() {
     fi
 }
 
+# Write an unobtrusive tmux config, unless the user already has one.
+#
+# The goal is for tmux to be invisible: no status bar, native-feeling scroll,
+# and a terminal type that keeps true colour working for the CLI's TUI.
+write_tmux_config() {
+    local config_file="${HOME}/.tmux.conf"
+
+    if [ -f "$config_file" ]; then
+        bashio::log.info "  - tmux: using existing ${config_file}"
+        return 0
+    fi
+
+    cat > "$config_file" << 'TMUX_EOF'
+# Minimal config so the persistent session stays out of the way.
+set -g status off
+set -g mouse on
+set -g history-limit 50000
+set -sg escape-time 0
+set -g default-terminal "screen-256color"
+set -ga terminal-overrides ",*:Tc"
+setw -g aggressive-resize on
+set -g destroy-unattached off
+TMUX_EOF
+    chmod 644 "$config_file"
+    bashio::log.info "  - tmux: default config written to ${config_file}"
+}
+
+# Keep the CLI running when the browser disconnects.
+#
+# ttyd starts a *new* process for every websocket connection, so closing the
+# dashboard (or a background tab being throttled until the socket drops) would
+# otherwise kill the running Codex session - reconnecting then lands in a fresh
+# one. Running inside tmux decouples the two: the connection carries a tmux
+# client, while the session itself keeps running in the background, and a
+# reconnect re-attaches to it with its scrollback and state intact.
+wrap_launch_command() {
+    local inner="$1"
+    local session="codex"
+    local persistent_session
+
+    persistent_session=$(bashio::config 'persistent_terminal_session' 'true')
+
+    if [ "$persistent_session" != "true" ]; then
+        bashio::log.info "Persistent terminal session: disabled (a dropped connection restarts Codex)"
+        echo "$inner"
+        return 0
+    fi
+
+    if ! command -v tmux > /dev/null 2>&1; then
+        bashio::log.warning "Persistent terminal session enabled but tmux is missing; falling back to a plain shell"
+        echo "$inner"
+        return 0
+    fi
+
+    # Write the command to a launcher script instead of nesting it in more
+    # quotes: it travels through ttyd -> bash -c -> tmux -> bash, and the
+    # command itself already contains single quotes.
+    printf '#!/bin/bash\n%s\n' "$inner" > /usr/local/bin/codex-launch
+    chmod +x /usr/local/bin/codex-launch
+
+    write_tmux_config
+
+    bashio::log.info "Persistent terminal session: enabled (tmux session '${session}')"
+    # -A: attach to the session if it exists, create it otherwise
+    # -D: detach any stale client, so a dead connection cannot shrink the window
+    # -u: force UTF-8, keeps the CLI's box drawing intact
+    echo "tmux -u new-session -A -D -s ${session} /usr/local/bin/codex-launch"
+}
+
 
 # Start image upload service
 start_image_service() {
@@ -426,9 +495,11 @@ start_web_terminal() {
     bashio::log.info "CODEX_HOME=${CODEX_HOME}"
     bashio::log.info "HOME=${HOME}"
 
-    # Get the appropriate launch command based on configuration
+    # Get the appropriate launch command based on configuration, then keep it
+    # alive across browser disconnects (tmux)
     local launch_command
     launch_command=$(get_codex_launch_command)
+    launch_command=$(wrap_launch_command "$launch_command")
 
     # Log the configuration being used
     local auto_launch_codex

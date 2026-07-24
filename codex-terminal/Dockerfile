@@ -21,6 +21,7 @@ RUN apk add --no-cache \
     vim \
     wget \
     tree \
+    tmux \
     ripgrep \
     libgcc \
     libstdc++

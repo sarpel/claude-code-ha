@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.5
+
+### ✨ New Feature - The session survives a closed dashboard
+- **`persistent_terminal_session` (new option, default `true`)**: Claude now runs inside a tmux session. ttyd starts a *new* process for every websocket connection, so closing the dashboard - or a background tab being throttled until the socket drops - used to kill the running session and drop you into a fresh one on reconnect. The tmux session keeps running in the background and a reconnect re-attaches to it, with scrollback and state intact. `--ping-interval`/`reconnect` only ever restored the *connection*; this restores the *session*.
+- **Invisible by default**: a minimal `~/.tmux.conf` (no status bar, mouse on, 50k scrollback, true colour) is written on first start and never overwrites an existing one. `tmux` is now part of the image.
+- Set the option to `false` for the previous behaviour.
+
 ## 2.1.4
 
 ### 🛠️ Improvement - Bigger, nicer terminal typography

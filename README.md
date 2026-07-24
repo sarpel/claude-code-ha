@@ -31,6 +31,7 @@ Home Assistant add-ons that run AI coding CLIs inside a web-based terminal embed
 | --- | --- | --- |
 | `auto_launch_claude` | `true` | Start Claude on open, or show the interactive session picker when `false` |
 | `dangerously_skip_permissions` | `false` | Run Claude with `--dangerously-skip-permissions` (unrestricted file access) |
+| `persistent_terminal_session` | `true` | Keep the CLI running in a tmux session so a dropped connection resumes instead of restarting |
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
 | `use_persistent_claude` | `false` | Use a persistent Claude Code install in `/data` instead of the image-baked one |
@@ -51,6 +52,7 @@ Same stack as Claude Terminal Pro (web terminal, persistent auth/packages, image
 | `auto_launch_codex` | `true` | Start Codex on open, or show the interactive session picker when `false` |
 | `dangerously_bypass_approvals` | `false` | Run Codex with `--dangerously-bypass-approvals-and-sandbox` |
 | `openai_api_key` | `""` | Log in with this API key on startup (skipped when already logged in) |
+| `persistent_terminal_session` | `true` | Keep the CLI running in a tmux session so a dropped connection resumes instead of restarting |
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
 | `use_persistent_codex` | `false` | Use a persistent Codex install in `/data` instead of the image-baked one |

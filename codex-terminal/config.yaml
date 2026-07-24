@@ -1,7 +1,7 @@
 ---
 name: "Codex Terminal Pro"
 description: "Enhanced terminal interface for OpenAI's Codex CLI with persistent auth, package management, and image paste support."
-version: "1.0.4"
+version: "1.0.5"
 slug: "codex_terminal_pro"
 init: false
 
@@ -32,6 +32,7 @@ options:
   auto_launch_codex: true
   dangerously_bypass_approvals: false
   openai_api_key: ""
+  persistent_terminal_session: true
   persistent_apk_packages: []
   persistent_pip_packages: []
   use_persistent_codex: false
@@ -41,6 +42,7 @@ schema:
   auto_launch_codex: bool?
   dangerously_bypass_approvals: bool?
   openai_api_key: password?
+  persistent_terminal_session: bool?
   persistent_apk_packages:
     - str?
   persistent_pip_packages:
