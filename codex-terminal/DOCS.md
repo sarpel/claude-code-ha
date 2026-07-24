@@ -56,6 +56,9 @@ Runs Codex with `--dangerously-bypass-approvals-and-sandbox`: no command approva
 ### OpenAI API key — `openai_api_key` (default empty)
 When set, the add-on runs `codex login --with-api-key` on startup **only if no login exists yet**. A manual ChatGPT login is never overwritten. The key is stored by Home Assistant in the add-on options and by Codex in `/data/.config/codex/auth.json` (chmod 600).
 
+### Persistent Terminal Session — `persistent_terminal_session` (default `true`)
+Runs Codex inside a tmux session. ttyd starts a new process per websocket connection, so closing the dashboard or losing the connection would otherwise kill the running session; with tmux, a reconnect re-attaches to the same session with scrollback and state intact. Set to `false` for the previous behavior (a fresh process on every reconnect).
+
 ### Persistent Packages — `persistent_apk_packages` / `persistent_pip_packages` (default `[]`)
 APK and pip packages to auto-install on startup. Stored in `/data/packages`, so they survive restarts. You can also install on demand with `persist-install`.
 
@@ -71,6 +74,7 @@ Only relevant with `use_persistent_codex`. When enabled, the latest Codex releas
 auto_launch_codex: true
 dangerously_bypass_approvals: false
 openai_api_key: "sk-..."
+persistent_terminal_session: true
 persistent_apk_packages:
   - htop
 persistent_pip_packages:
