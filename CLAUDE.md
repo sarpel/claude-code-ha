@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Home Assistant **add-on repository** whose single add-on, **Claude Terminal Pro** (slug `claude_terminal_pro`, in `claude-terminal/`), runs the Claude Code CLI inside a browser-based terminal embedded in the Home Assistant dashboard. It adds an image-paste service, persistent package management, and persistent auth on top of the upstream add-on.
+A Home Assistant **add-on repository** with two sibling add-ons sharing the same architecture:
+
+- **Claude Terminal Pro** (slug `claude_terminal_pro`, in `claude-terminal/`) — runs the Claude Code CLI inside a browser-based terminal embedded in the Home Assistant dashboard. It adds an image-paste service, persistent package management, and persistent auth on top of the upstream add-on.
+- **Codex Terminal Pro** (slug `codex_terminal_pro`, in `codex-terminal/`, since 2026-07) — a near-identical copy running **OpenAI's Codex CLI**. Differences: Codex installs as a static musl binary from GitHub releases (`codex-<triple>-unknown-linux-musl.tar.gz`, npm `@openai/codex` fallback), persists auth/sessions in `CODEX_HOME=/data/.config/codex`, supports headless login via the `openai_api_key` option (`codex login --with-api-key`), maps **host ports 7690/7691** (container ports stay 7680/7681) so both add-ons can run simultaneously, ships no armv7 (OpenAI has no arm32 binary), and uses a global `AGENTS.md` (in `codex-config/`) instead of Claude skills for the persist-install rule. The two add-on dirs are intentionally self-contained copies — HA add-ons cannot share files — so behavioral fixes usually need applying to **both**.
+
+The sections below describe `claude-terminal/`; the same principles (local build, cache-bust, /data persistence, release discipline) apply to `codex-terminal/` with the Codex-specific substitutions above.
 
 **Ownership:** maintained by `sarpel` at [github.com/sarpel/claude-code-ha](https://github.com/sarpel/claude-code-ha). Identity lives in `repository.yaml`, `claude-terminal/config.yaml` (`url`), `claude-terminal/build.yaml` (`labels`), and `LICENSE` — keep these consistent when rebranding. (Originally derived from an upstream Home Assistant add-on; prior attribution was removed by the maintainer's choice.)
 

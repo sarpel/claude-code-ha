@@ -1,0 +1,68 @@
+---
+name: "Codex Terminal Pro"
+description: "Enhanced terminal interface for OpenAI's Codex CLI with persistent auth, package management, and image paste support."
+version: "1.0.0"
+slug: "codex_terminal_pro"
+init: false
+
+# Supported architectures (OpenAI ships no arm32 Codex binary)
+arch:
+  - aarch64
+  - amd64
+
+# External resources
+url: "https://github.com/sarpel/claude-code-ha"
+
+# Web interface configuration
+ingress: true
+ingress_port: 7680
+panel_icon: mdi:console-line
+panel_title: "Codex Terminal Pro"
+panel_admin: true
+
+# Port configuration
+# Host ports differ from Claude Terminal Pro (7680/7681) so both add-ons can
+# expose their services at the same time. Container-internal ports stay 7680/7681.
+ports:
+  7680/tcp: 7690
+  7681/tcp: 7691
+ports_description:
+  7680/tcp: "Image upload service and web interface"
+  7681/tcp: "ttyd terminal (embedded in web interface)"
+
+# Add-on configuration options
+options:
+  auto_launch_codex: true
+  dangerously_bypass_approvals: false
+  openai_api_key: ""
+  persistent_apk_packages: []
+  persistent_pip_packages: []
+  use_persistent_codex: false
+  auto_update_codex_on_start: false
+
+schema:
+  auto_launch_codex: bool?
+  dangerously_bypass_approvals: bool?
+  openai_api_key: password?
+  persistent_apk_packages:
+    - str?
+  persistent_pip_packages:
+    - str?
+  use_persistent_codex: bool?
+  auto_update_codex_on_start: bool?
+
+# Volume mappings for file access
+map:
+  - config:rw    # Access to Home Assistant configuration files
+
+# API access for Home Assistant integration
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+auth_api: true
+
+# Service startup configuration
+startup: services
+
+# Web UI access URL
+webui: http://[HOST]:[PORT:7680]/
