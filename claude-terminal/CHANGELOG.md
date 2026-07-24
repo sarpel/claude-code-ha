@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.3
+
+### 🐛 Bug Fix - Add-on restart loop when `persistent_apk_packages` / `persistent_pip_packages` is set
+- **Root cause**: `bashio::config` returns the **elements** of a list option, one per line (see bashio's `lib/config.sh`, which evaluates `.key[]`) — not a JSON array. `auto_install_packages()` piped that output back into `jq -r '.[]'`, so jq aborted with `parse error: Invalid literal at line 2, column 0`. Under `set -e` + `pipefail` that killed `run.sh` before the terminal ever started, and the Supervisor restarted the container in a loop. Any non-empty package list triggered it; an empty list did not, which is why the add-on worked until packages were configured.
+- **Fix**: the configured packages are now read as plain lines (no second JSON parse), and the whole auto-install step can no longer abort startup — a failing package is logged and skipped.
+
 ## 2.1.2
 
 ### 🔧 Technical - Hardening and correctness fixes (parity with Codex Terminal Pro 1.0.1)
