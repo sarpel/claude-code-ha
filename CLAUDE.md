@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Home Assistant **add-on repository** whose single add-on, **Claude Terminal Pro** (slug `claude_terminal_pro`, in `claude-terminal/`), runs the Claude Code CLI inside a browser-based terminal embedded in the Home Assistant dashboard. It adds an image-paste service, persistent package management, and persistent auth on top of the upstream add-on.
+A Home Assistant **add-on repository** with two sibling add-ons sharing the same architecture:
+
+- **Claude Terminal Pro** (slug `claude_terminal_pro`, in `claude-terminal/`) — runs the Claude Code CLI inside a browser-based terminal embedded in the Home Assistant dashboard. It adds an image-paste service, persistent package management, and persistent auth on top of the upstream add-on.
+- **Codex Terminal Pro** (slug `codex_terminal_pro`, in `codex-terminal/`, since 2026-07) — a near-identical copy running **OpenAI's Codex CLI**. Differences: Codex installs as a static musl binary from GitHub releases (`codex-<triple>-unknown-linux-musl.tar.gz`, npm `@openai/codex` fallback), persists auth/sessions in `CODEX_HOME=/data/.config/codex`, supports headless login via the `openai_api_key` option (`codex login --with-api-key`), ships no armv7 (OpenAI has no arm32 binary), and uses a global `AGENTS.md` (in `codex-config/`) instead of Claude skills for the persist-install rule. The two add-on dirs are intentionally self-contained copies — HA add-ons cannot share files — so behavioral fixes usually need applying to **both**.
+
+The sections below describe `claude-terminal/`; the same principles (local build, cache-bust, /data persistence, release discipline) apply to `codex-terminal/` with the Codex-specific substitutions above.
 
 **Ownership:** maintained by `sarpel` at [github.com/sarpel/claude-code-ha](https://github.com/sarpel/claude-code-ha). Identity lives in `repository.yaml`, `claude-terminal/config.yaml` (`url`), `claude-terminal/build.yaml` (`labels`), and `LICENSE` — keep these consistent when rebranding. (Originally derived from an upstream Home Assistant add-on; prior attribution was removed by the maintainer's choice.)
 
@@ -31,6 +36,8 @@ Entry point is `claude-terminal/run.sh` → `main()`, which runs in order:
 **Dual-port web stack** (note: ingress port differs from the terminal port):
 - **7680** — Node/Express **image-service** (`image-service/server.js`). This is the HA **ingress port** (`ingress_port: 7680`). It serves the custom HTML UI (`image-service/public/index.html`), accepts image uploads (`POST /upload` → saved to `/data/images/`), and **proxies the embedded terminal** to ttyd.
 - **7681** — **ttyd** terminal running `bash -c "$launch_command"`. Launched with `--ping-interval 30 --client-option reconnect=5` to survive idle disconnects.
+
+Both ports are **container-internal only**: neither add-on declares `ports:` (removed in claude-terminal 2.1.2 / codex-terminal 1.0.1), because ttyd runs `--writable` with no credentials — publishing it on the host would expose a root terminal to the LAN. Access is through ingress exclusively; do not re-add host port mappings without adding authentication first.
 
 What the terminal launches is decided by `get_claude_launch_command()` from the `auto_launch_claude` option: either start `claude` directly (falling back to the session picker on exit) or open `claude-session-picker` first. `dangerously_skip_permissions: true` adds `--dangerously-skip-permissions` and sets `IS_SANDBOX=1` (required to allow that flag as root).
 

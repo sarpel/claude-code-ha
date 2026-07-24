@@ -1,15 +1,14 @@
 ---
-name: "Claude Terminal Pro"
-description: "Enhanced terminal interface for Anthropic's Claude Code CLI with persistent auth, package management, and image paste support."
-version: "2.1.2"
-slug: "claude_terminal_pro"
+name: "Codex Terminal Pro"
+description: "Enhanced terminal interface for OpenAI's Codex CLI with persistent auth, package management, and image paste support."
+version: "1.0.2"
+slug: "codex_terminal_pro"
 init: false
 
-# Supported architectures
+# Supported architectures (OpenAI ships no arm32 Codex binary)
 arch:
   - aarch64
   - amd64
-  - armv7
 
 # External resources
 url: "https://github.com/sarpel/claude-code-ha"
@@ -17,35 +16,37 @@ url: "https://github.com/sarpel/claude-code-ha"
 # Web interface configuration
 ingress: true
 ingress_port: 7680
-panel_icon: mdi:code-braces-box
-panel_title: "Claude Terminal Pro"
+panel_icon: mdi:console-line
+panel_title: "Codex Terminal Pro"
 panel_admin: true
 
 # No host port mappings on purpose.
 # The web interface (container port 7680) is reachable through Home Assistant
 # ingress only; ttyd (7681) runs unauthenticated behind it, so publishing either
 # port on the host would expose a writable root terminal to the local network.
+# Ingress also gives each add-on its own panel, so Claude Terminal Pro and
+# Codex Terminal Pro can run side by side without any port remapping.
 
 # Add-on configuration options
 options:
-  auto_launch_claude: true
-  dangerously_skip_permissions: false
+  auto_launch_codex: true
+  dangerously_bypass_approvals: false
+  openai_api_key: ""
   persistent_apk_packages: []
   persistent_pip_packages: []
-  use_persistent_claude: false
-  auto_update_claude_on_start: false
-  claude_channel: latest
+  use_persistent_codex: false
+  auto_update_codex_on_start: false
 
 schema:
-  auto_launch_claude: bool?
-  dangerously_skip_permissions: bool?
+  auto_launch_codex: bool?
+  dangerously_bypass_approvals: bool?
+  openai_api_key: password?
   persistent_apk_packages:
     - str?
   persistent_pip_packages:
     - str?
-  use_persistent_claude: bool?
-  auto_update_claude_on_start: bool?
-  claude_channel: "list(latest|stable)?"
+  use_persistent_codex: bool?
+  auto_update_codex_on_start: bool?
 
 # Volume mappings for file access
 map:
