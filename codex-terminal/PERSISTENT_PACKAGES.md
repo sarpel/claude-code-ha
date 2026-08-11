@@ -86,6 +86,7 @@ persist-install --list
 # Persistent packages are checked FIRST
 /data/packages/bin                    # ← persist-install packages
 /data/packages/python/venv/bin        # ← Python packages
+/data/home/.local/bin                 # ← persistent Codex launcher
 /usr/local/bin                        # System packages
 /usr/bin
 /bin
@@ -99,7 +100,7 @@ You can configure packages to install automatically every time the add-on starts
 
 ### Via Home Assistant UI
 
-1. Go to **Settings** → **Add-ons** → **Codex Terminal**
+1. Go to **Settings** → **Add-ons** → **Codex Terminal Pro**
 2. Click **Configuration** tab
 3. Add your packages:
 
@@ -387,7 +388,7 @@ du -sh /data/packages/*
 
 If you encounter issues:
 
-1. Check the add-on logs: **Settings** → **Add-ons** → **Codex Terminal** → **Log**
+1. Check the add-on logs: **Settings** → **Add-ons** → **Codex Terminal Pro** → **Log**
 2. Run `persist-install --list` to verify installations
 3. Report issues on GitHub with log output
 4. Include your package list and error messages

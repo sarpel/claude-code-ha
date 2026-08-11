@@ -56,7 +56,7 @@ Same stack as Claude Terminal Pro (web terminal, persistent auth/packages, image
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
 | `use_persistent_codex` | `false` | Use a persistent Codex install in `/data` instead of the image-baked one |
-| `auto_update_codex_on_start` | `false` | With `use_persistent_codex`, fetch the latest release on each startup |
+| `auto_update_codex_on_start` | `false` | With `use_persistent_codex`, install the latest complete Codex package on each startup |
 
 ## Documentation
 

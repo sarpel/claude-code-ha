@@ -1,5 +1,9 @@
 # TODO — Codex Terminal Pro add-on (OpenAI Codex CLI kopyası)
 
+> Historical implementation checklist for the original `1.0.0` release. All
+> items are complete; later installation, networking, artwork, and persistence
+> changes are documented in `codex-terminal/CHANGELOG.md` and `DOCS.md`.
+
 Görev: `claude-terminal/` eklentisinin OpenAI Codex CLI kullanan bir kopyasını
 `codex-terminal/` olarak oluşturmak; HA yan menüsünde ayrı bir panel uygulaması
 olarak, neredeyse aynı özelliklerle.

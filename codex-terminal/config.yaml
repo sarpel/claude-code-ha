@@ -1,7 +1,7 @@
 ---
 name: "Codex Terminal Pro"
 description: "Enhanced terminal interface for OpenAI's Codex CLI with persistent auth, package management, and image paste support."
-version: "1.0.6"
+version: "1.0.7"
 slug: "codex_terminal_pro"
 init: false
 

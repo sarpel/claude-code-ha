@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.6
+
+### 📚 Documentation - Synchronize operator guidance
+- **Current paths and names**: document the full runtime `PATH` order and use the manifest name **Claude Terminal Pro** consistently in package-management guidance.
+
 ## 2.1.5
 
 ### ✨ New Feature - The session survives a closed dashboard

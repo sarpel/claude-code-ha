@@ -51,15 +51,15 @@ All options are optional; the add-on works out of the box (you still need to aut
 | `persistent_terminal_session` | `true` | Keep the CLI running in a tmux session so a dropped connection (closed or backgrounded dashboard) resumes instead of restarting |
 | `persistent_apk_packages` | `[]` | APK packages to auto-install on startup |
 | `persistent_pip_packages` | `[]` | Python packages to auto-install on startup |
-| `use_persistent_codex` | `false` | Use a self-updating Codex CLI kept in `/data/home/.local/bin` |
-| `auto_update_codex_on_start` | `false` | With `use_persistent_codex`, fetch the latest release on each startup |
+| `use_persistent_codex` | `false` | Use a persistent complete Codex package kept under `/data/home/.local` |
+| `auto_update_codex_on_start` | `false` | With `use_persistent_codex`, install the latest complete package from npm on each startup |
 
 See [DOCS.md](DOCS.md) for full details and examples.
 
 ## How it works
 
 - **Web UI / terminal** — port `7680` (container) serves the web interface (image upload + embedded terminal) over Home Assistant ingress; `ttyd` runs the terminal on `7681` behind it. Neither port is published on the host — access goes through ingress only, so the terminal is never exposed to the local network, and Claude Terminal Pro can run at the same time (each add-on gets its own ingress panel).
-- **Persistence** — everything that must survive restarts lives under `/data`: credentials and sessions (`/data/.config/codex`), installed packages (`/data/packages`), uploaded images (`/data/images`), and the optional Codex override (`/data/home/.local/bin`).
+- **Persistence** — everything that must survive restarts lives under `/data`: credentials and sessions (`/data/.config/codex`), installed packages (`/data/packages`), uploaded images (`/data/images`), and the optional complete Codex package (`/data/home/.local`, with its launcher in `bin/`).
 - **Pre-installed tools** — `git`, `gh` (GitHub CLI), `ha` (Home Assistant CLI), `ripgrep`, Python 3, and the `persist-install` helper.
 
 ## Installing packages

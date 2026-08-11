@@ -1,7 +1,13 @@
 # Codex Terminal Pro — Design
 
 Date: 2026-07-24
-Status: Implemented (autonomous run; user review pending)
+Status: Implemented (historical `1.0.0` baseline)
+
+> Historical `1.0.0` design baseline. It intentionally records the original
+> decisions; for current installation, networking, artwork, and persistence
+> behavior, use the current [README](../../../codex-terminal/README.md),
+> [documentation](../../../codex-terminal/DOCS.md), and
+> [changelog](../../../codex-terminal/CHANGELOG.md).
 
 ## Goal
 

@@ -37,6 +37,8 @@ Entry point is `claude-terminal/run.sh` → `main()`, which runs in order:
 - **7680** — Node/Express **image-service** (`image-service/server.js`). This is the HA **ingress port** (`ingress_port: 7680`). It serves the custom HTML UI (`image-service/public/index.html`), accepts image uploads (`POST /upload` → saved to `/data/images/`), and **proxies the embedded terminal** to ttyd.
 - **7681** — **ttyd** terminal running `bash -c "$launch_command"`. Launched with `--ping-interval 30 --client-option reconnect=5` to survive idle disconnects.
 
+ttyd starts a new process per websocket connection, so a dropped/reopened connection alone would still restart the CLI. `run.sh:wrap_launch_command()` closes that gap (since 2.1.5/1.0.5): unless the `persistent_terminal_session` option is `false`, it wraps `$launch_command` in `tmux -u new-session -A -D -s claude`/`codex` (writing an invisible `~/.tmux.conf` via `write_tmux_config()` on first run), so a reconnect re-attaches to the same running session instead of starting a fresh one.
+
 Both ports are **container-internal only**: neither add-on declares `ports:` (removed in claude-terminal 2.1.2 / codex-terminal 1.0.1), because ttyd runs `--writable` with no credentials — publishing it on the host would expose a root terminal to the LAN. Access is through ingress exclusively; do not re-add host port mappings without adding authentication first.
 
 What the terminal launches is decided by `get_claude_launch_command()` from the `auto_launch_claude` option: either start `claude` directly (falling back to the session picker on exit) or open `claude-session-picker` first. `dangerously_skip_permissions: true` adds `--dangerously-skip-permissions` and sets `IS_SANDBOX=1` (required to allow that flag as root).
@@ -69,29 +71,37 @@ Always verify after installing (`<tool> --version`) and tell the user it persist
 
 ## Development Commands
 
-Dev shell is Nix-based (`flake.nix`); `nix develop` (or `direnv allow`) provides these aliases:
-- `build-addon` — Podman build of the add-on
-- `run-addon` — run locally on :7681 with `./config` mapped to `/config`
-- `lint-dockerfile` — hadolint on the Dockerfile
-- `test-endpoint` — `curl localhost:7681`
+The repository has no checked-in Nix dev shell, task runner, or CI workflow. Run the cheap local gates directly:
 
-Manual local build/test loop (no aliases):
 ```bash
-podman build --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.21 -t local/claude-terminal:test ./claude-terminal
-mkdir -p /tmp/test-config/claude-config
-podman run -d --name test-claude-dev -p 7681:7681 -v /tmp/test-config:/config local/claude-terminal:test
-podman logs -f test-claude-dev          # web UI at http://localhost:7681
-podman stop test-claude-dev && podman rm test-claude-dev
+bash -n claude-terminal/run.sh claude-terminal/scripts/*.sh
+bash -n codex-terminal/run.sh codex-terminal/scripts/*.sh
+node --check claude-terminal/image-service/server.js
+node --check codex-terminal/image-service/server.js
+python3 - <<'PY'
+from pathlib import Path
+import json, yaml
+for path in Path('.').glob('*-terminal/*.yaml'):
+    yaml.safe_load(path.read_text())
+for path in Path('.').glob('*-terminal/image-service/package.json'):
+    json.loads(path.read_text())
+PY
 ```
-To iterate on a script without a full rebuild: `podman cp ./claude-terminal/scripts/<file> test-claude-dev:/opt/scripts/` then re-exec it.
 
-Note: the dev environment has **no sudo**, and the runtime target is Alpine (HA OS base).
+When Podman is available, build either add-on with both required build arguments:
+
+```bash
+podman build --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.21 --build-arg TARGETARCH=amd64 -t local/claude-terminal:test ./claude-terminal
+podman build --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.21 --build-arg TARGETARCH=amd64 -t local/codex-terminal:test ./codex-terminal
+```
+
+The runtime expects Home Assistant Supervisor-provided `/data`, options, ingress, and bashio services, so perform end-to-end smoke tests through an installed development add-on rather than a bare container command. The runtime target is Alpine (HA OS base).
 
 ## Release Discipline (REQUIRED for any add-on change)
 
 Every change to the add-on MUST, in the same commit:
-1. **Bump `version`** in `claude-terminal/config.yaml` — patch (xx.X) for fixes, minor (x.X.0) for features, major for breaking changes. Keep the matching `org.opencontainers.image.version` in `claude-terminal/build.yaml` in sync.
-2. **Prepend a changelog entry** to the TOP of `claude-terminal/CHANGELOG.md`:
+1. **Bump `version`** in the changed add-on's `config.yaml` — patch for fixes/docs, minor for features, major for breaking changes. Keep the matching `org.opencontainers.image.version` in that add-on's `build.yaml` in sync.
+2. **Prepend a changelog entry** to the TOP of the changed add-on's `CHANGELOG.md`:
    ```markdown
    ## X.Y.Z
 
@@ -107,4 +117,4 @@ Do not commit add-on changes without both. HA surfaces the version bump as the u
 - Add-on shell scripts start with `#!/usr/bin/with-contenv bashio` and log via `bashio::log.*`; read options via `bashio::config`.
 - Indentation: 2 spaces YAML, 4 spaces shell.
 - Auth/credential files must be `chmod 600`.
-- `.github/workflows/claude.yml` only runs the `@claude` GitHub Action on issues/PRs — it does **not** build or publish images (consistent with local-build above).
+- No CI workflow is currently checked in; local validation is the release gate, and Home Assistant builds each add-on locally from its Dockerfile.

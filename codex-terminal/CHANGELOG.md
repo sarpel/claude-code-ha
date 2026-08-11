@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7
+
+### 📚 Documentation - Synchronize package and development guidance
+- **Current behavior**: describe the complete npm-installed Codex package, its persistent location, the full runtime `PATH`, and the repository's actual local validation/build workflow.
+
 ## 1.0.6
 
 ### 🐛 Bug Fix - Code Mode host is installed with Codex
