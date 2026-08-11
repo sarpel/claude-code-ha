@@ -143,11 +143,18 @@ setup_persistent_codex() {
     fi
 
     if [ "$auto_update_codex_on_start" = "true" ]; then
-        bashio::log.info "Persistent Codex override: downloading latest Codex CLI into /data/home/.local/bin..."
-        if install_codex_release "$target_bin"; then
+        bashio::log.info "Persistent Codex override: installing latest complete Codex package into /data/home/.local..."
+        if install_codex_package "$target_bin"; then
             bashio::log.info "Persistent Codex override: install/update completed"
         else
-            bashio::log.warning "Persistent Codex override: install/update failed; falling back to existing version if present"
+            bashio::log.warning "Persistent Codex override: install/update failed; falling back to image-baked Codex"
+        fi
+    elif [ -x "$target_bin" ] && ! validate_codex_package "$target_bin"; then
+        bashio::log.warning "Persistent Codex override is incomplete (Code Mode host missing); repairing it once..."
+        if install_codex_package "$target_bin"; then
+            bashio::log.info "Persistent Codex override: repair completed"
+        else
+            bashio::log.warning "Persistent Codex override: repair failed; falling back to image-baked Codex"
         fi
     fi
 
@@ -160,36 +167,80 @@ setup_persistent_codex() {
     fi
 }
 
-# Download the latest Codex musl binary from GitHub releases into $1.
+# Install the latest complete Codex package under the prefix containing $1.
+# The npm package keeps codex and codex-code-mode-host on the same version.
 # Also exposed to terminal sessions as /usr/local/bin/codex-update.
-install_codex_release() {
+validate_codex_package() {
     local target_bin="$1"
-    local triple
-    local tmp_dir
+    local install_prefix
+    local package_root
+    local code_mode_host
 
-    case "$(uname -m)" in
-        x86_64)  triple="x86_64-unknown-linux-musl" ;;
-        aarch64) triple="aarch64-unknown-linux-musl" ;;
-        *)
-            bashio::log.error "Unsupported architecture for Codex: $(uname -m)"
-            return 1
-            ;;
-    esac
+    install_prefix=$(dirname "$(dirname "$target_bin")")
+    package_root="$install_prefix/lib/node_modules/@openai/codex"
+    code_mode_host=$(find "$package_root" -type f -name codex-code-mode-host -print -quit 2>/dev/null || true)
 
-    tmp_dir=$(mktemp -d)
-    if curl -fsSL -o "$tmp_dir/codex.tar.gz" \
-        "https://github.com/openai/codex/releases/latest/download/codex-${triple}.tar.gz" \
-        && tar -xzf "$tmp_dir/codex.tar.gz" -C "$tmp_dir"; then
-        mkdir -p "$(dirname "$target_bin")"
-        rm -f "$target_bin"
-        mv "$tmp_dir"/codex-* "$target_bin" 2>/dev/null || mv "$tmp_dir"/codex "$target_bin"
-        chmod +x "$target_bin"
-        rm -rf "$tmp_dir"
+    [ -x "$target_bin" ] && [ -n "$code_mode_host" ] && [ -x "$code_mode_host" ] \
+        && "$target_bin" --version >/dev/null 2>&1 \
+        && "$code_mode_host" --help >/dev/null 2>&1
+}
+
+install_codex_package() {
+    local target_bin="$1"
+    local install_prefix
+
+    install_prefix=$(dirname "$(dirname "$target_bin")")
+
+    mkdir -p "$install_prefix"
+    # npm will not replace the previous standalone file with its launcher.
+    # Removing this exact override is safe: on failure PATH falls through to
+    # the image-baked Codex installation.
+    rm -f "$target_bin"
+
+    if npm install --global --prefix "$install_prefix" @openai/codex@latest \
+        && validate_codex_package "$target_bin"; then
         return 0
     fi
 
-    rm -rf "$tmp_dir"
+    # Never leave a broken high-priority launcher masking the baked-in CLI.
+    rm -f "$target_bin"
+    if [ -e "$target_bin" ] || [ -L "$target_bin" ]; then
+        bashio::log.error "Failed to remove broken Codex override: $target_bin"
+    else
+        bashio::log.error "Codex package validation failed (CLI or Code Mode host missing)"
+    fi
     return 1
+}
+
+install_codex_update_helper() {
+    cat > /usr/local/bin/codex-update << 'UPDATE_EOF'
+#!/bin/bash
+# Install the latest complete Codex package into /data/home/.local.
+set -e
+TARGET_BIN="/data/home/.local/bin/codex"
+INSTALL_PREFIX="/data/home/.local"
+PACKAGE_ROOT="$INSTALL_PREFIX/lib/node_modules/@openai/codex"
+
+echo "Installing latest complete Codex package..."
+mkdir -p "$INSTALL_PREFIX"
+rm -f "$TARGET_BIN"
+
+if npm install --global --prefix "$INSTALL_PREFIX" @openai/codex@latest; then
+    CODE_MODE_HOST=$(find "$PACKAGE_ROOT" -type f -name codex-code-mode-host -print -quit 2>/dev/null || true)
+    if [ -x "$TARGET_BIN" ] && [ -n "$CODE_MODE_HOST" ] && [ -x "$CODE_MODE_HOST" ] \
+        && "$TARGET_BIN" --version >/dev/null 2>&1 \
+        && "$CODE_MODE_HOST" --help >/dev/null 2>&1; then
+        echo "Installed: $("$TARGET_BIN" --version)"
+        echo "Code Mode host: $CODE_MODE_HOST"
+        exit 0
+    fi
+fi
+
+rm -f "$TARGET_BIN"
+echo "Codex package validation failed; using the image-baked Codex instead." >&2
+exit 1
+UPDATE_EOF
+    chmod +x /usr/local/bin/codex-update
 }
 
 # Log in to OpenAI with an API key from the add-on options (headless-friendly).
@@ -238,30 +289,8 @@ setup_session_picker() {
         bashio::log.info "Authentication helper script ready"
     fi
 
-    # Small helper so users can update the persistent override manually
-    cat > /usr/local/bin/codex-update << 'UPDATE_EOF'
-#!/bin/bash
-# Download the latest Codex CLI musl binary into /data/home/.local/bin/codex
-set -e
-case "$(uname -m)" in
-    x86_64)  TRIPLE="x86_64-unknown-linux-musl" ;;
-    aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;
-    *) echo "Unsupported architecture: $(uname -m)"; exit 1 ;;
-esac
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
-echo "Downloading latest Codex CLI (${TRIPLE})..."
-curl -fsSL -o "$TMP_DIR/codex.tar.gz" \
-    "https://github.com/openai/codex/releases/latest/download/codex-${TRIPLE}.tar.gz"
-tar -xzf "$TMP_DIR/codex.tar.gz" -C "$TMP_DIR"
-mkdir -p /data/home/.local/bin
-rm -f /data/home/.local/bin/codex
-mv "$TMP_DIR"/codex-* /data/home/.local/bin/codex 2>/dev/null || mv "$TMP_DIR"/codex /data/home/.local/bin/codex
-chmod +x /data/home/.local/bin/codex
-echo "Installed: $(/data/home/.local/bin/codex --version)"
-echo "Note: this persistent copy takes effect when 'use_persistent_codex' is enabled (it is first in PATH)."
-UPDATE_EOF
-    chmod +x /usr/local/bin/codex-update
+    # Small helper so users can update the persistent override manually.
+    install_codex_update_helper
 }
 
 # Setup persistent package manager

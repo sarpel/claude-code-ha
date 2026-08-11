@@ -32,26 +32,16 @@ RUN apk add --no-cache \
 # installer to fetch the newest version instead of reusing a stale cached layer.
 ADD https://api.github.com/repos/openai/codex/releases/latest /tmp/codex-latest.json
 
-# Install OpenAI Codex CLI (latest release)
-# Download the static musl binary from GitHub releases (works on Alpine).
-# Falls back to npm if the download fails; the npm package vendors the same binaries.
+# Install the complete OpenAI Codex package (latest release).
+# The package includes companion executables such as codex-code-mode-host;
+# installing only the standalone codex binary makes Code Mode fail closed.
 ARG TARGETARCH
-RUN case "${TARGETARCH}" in \
-        amd64)  CODEX_TRIPLE="x86_64-unknown-linux-musl" ;; \
-        arm64)  CODEX_TRIPLE="aarch64-unknown-linux-musl" ;; \
-        *)      echo "Unsupported architecture for Codex: ${TARGETARCH}" && exit 1 ;; \
-    esac && \
-    ( \
-      echo "Installing Codex CLI ($(jq -r '.tag_name' /tmp/codex-latest.json 2>/dev/null || echo latest)) for ${CODEX_TRIPLE}..." && \
-      mkdir -p /tmp/codex-extract && \
-      curl -fsSL -o /tmp/codex.tar.gz \
-        "https://github.com/openai/codex/releases/latest/download/codex-${CODEX_TRIPLE}.tar.gz" && \
-      tar -xzf /tmp/codex.tar.gz -C /tmp/codex-extract && \
-      mv /tmp/codex-extract/codex* /usr/local/bin/codex && \
-      chmod +x /usr/local/bin/codex && \
-      rm -rf /tmp/codex.tar.gz /tmp/codex-extract && \
-      /usr/local/bin/codex --version \
-    ) || npm install -g @openai/codex@latest
+RUN npm install -g @openai/codex@latest \
+    && CODEX_PACKAGE_ROOT="$(npm root -g)/@openai/codex" \
+    && CODE_MODE_HOST="$(find "$CODEX_PACKAGE_ROOT" -type f -name codex-code-mode-host -print -quit)" \
+    && test -x "$CODE_MODE_HOST" \
+    && codex --version \
+    && "$CODE_MODE_HOST" --help >/dev/null
 
 # Install Home Assistant CLI (ha command)
 # Download appropriate binary based on build architecture

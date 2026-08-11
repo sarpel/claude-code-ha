@@ -63,10 +63,12 @@ Runs Codex inside a tmux session. ttyd starts a new process per websocket connec
 APK and pip packages to auto-install on startup. Stored in `/data/packages`, so they survive restarts. You can also install on demand with `persist-install`.
 
 ### Persistent Codex override — `use_persistent_codex` (default `false`)
-When enabled, the add-on uses a Codex binary kept in `/data/home/.local/bin` (persistent storage) instead of the version baked into the image. It takes priority in `PATH`, so it supersedes the baked version and survives restarts.
+When enabled, the add-on uses a complete Codex package kept under `/data/home/.local` (persistent storage) instead of the version baked into the image. Its launcher in `/data/home/.local/bin` takes priority in `PATH`, so it supersedes the baked version and survives restarts. Installing the complete package keeps companion executables such as `codex-code-mode-host` on the same version as the CLI.
 
 ### Startup updates — `auto_update_codex_on_start` (default `false`)
-Only relevant with `use_persistent_codex`. When enabled, the latest Codex release binary is downloaded from GitHub on each startup. Requires network access at startup; on failure it falls back to the existing version.
+Only relevant with `use_persistent_codex`. When enabled, the latest complete Codex package is installed from npm on each startup. Requires access to the npm registry; if installation or Code Mode host validation fails, the broken override is removed and the add-on falls back to the image-baked version.
+
+Existing persistent overrides created by older add-on versions are checked at startup. If the CLI is present but its Code Mode host is missing, the add-on performs a one-time package repair even when automatic updates are disabled.
 
 ### Example configuration
 
@@ -93,8 +95,8 @@ codex-update
 
 There are two independent ways to update Codex:
 
-1. **Rebuild the add-on** — the build always installs the latest release (the install layer is cache-busted by the GitHub latest-release metadata). Let Home Assistant rebuild on a version update.
-2. **Persistent override** — set `use_persistent_codex: true` + `auto_update_codex_on_start: true`. Each startup fetches the latest release binary into `/data`, with no rebuild. You can also run `codex-update` manually at any time.
+1. **Rebuild the add-on** — the build always installs the latest complete Codex npm package (the install layer is cache-busted by the GitHub latest-release metadata). Let Home Assistant rebuild on a version update.
+2. **Persistent override** — set `use_persistent_codex: true` + `auto_update_codex_on_start: true`. Each startup installs the latest complete package into `/data`, with no rebuild. You can also run `codex-update` manually at any time.
 
 ## Persistent packages
 

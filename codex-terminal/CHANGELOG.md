@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6
+
+### 🐛 Bug Fix - Code Mode host is installed with Codex
+- **Root cause**: both the image build and persistent updater extracted only the standalone `codex` binary. Current Codex releases also require the version-matched `codex-code-mode-host` companion, so Code Mode failed closed with a missing executable under `/data/home/.local/bin`.
+- **Fix**: image builds and persistent updates now install the complete `@openai/codex` npm package and verify both the CLI and Code Mode host before activation. Existing incomplete overrides receive a one-time repair even when automatic updates are disabled; a failed repair removes the broken high-priority launcher so `PATH` falls back to the image-baked Codex.
+
 ## 1.0.5
 
 ### ✨ New Feature - The session survives a closed dashboard

@@ -97,11 +97,11 @@ check_network_connectivity() {
         bashio::log.info "Try setting custom DNS servers (e.g., 8.8.8.8, 1.1.1.1)"
     fi
 
-    # Try to reach GitHub releases (Codex CLI updates come from here)
-    if curl -s --head --connect-timeout 10 --max-time 15 https://github.com > /dev/null; then
-        bashio::log.info "Can reach GitHub (Codex CLI releases) ✓"
+    # Persistent Codex package updates come from the npm registry.
+    if curl -s --head --connect-timeout 10 --max-time 15 https://registry.npmjs.org/@openai%2Fcodex > /dev/null; then
+        bashio::log.info "Can reach npm registry (Codex CLI packages) ✓"
     else
-        bashio::log.warning "Cannot reach GitHub - this may affect Codex CLI installation/updates"
+        bashio::log.warning "Cannot reach npm registry - this may affect Codex CLI updates"
     fi
 
     # Try to reach GitHub Container Registry
