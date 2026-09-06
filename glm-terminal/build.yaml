@@ -1,0 +1,12 @@
+build_from:
+  aarch64: ghcr.io/home-assistant/aarch64-base:3.21
+  amd64: ghcr.io/home-assistant/amd64-base:3.21
+  armv7: ghcr.io/home-assistant/armv7-base:3.21
+
+labels:
+  org.opencontainers.image.title: "Home Assistant Add-on: GLM Terminal Pro"
+  org.opencontainers.image.description: "Claude Code CLI wired to Z.AI's Anthropic-compatible API (GLM models)"
+  org.opencontainers.image.source: "https://github.com/sarpel/claude-code-ha"
+  org.opencontainers.image.licenses: "MIT"
+
+  org.opencontainers.image.version: "1.0.0"

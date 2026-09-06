@@ -1,0 +1,71 @@
+---
+name: "GLM Terminal Pro"
+description: "Claude Code CLI in a web terminal, pointed at Z.AI's Anthropic-compatible API (GLM models) with persistent auth, package management, and image paste support."
+version: "1.0.0"
+slug: "glm_terminal_pro"
+init: false
+
+# Supported architectures
+arch:
+  - aarch64
+  - amd64
+  - armv7
+
+# External resources
+url: "https://github.com/sarpel/claude-code-ha"
+
+# Web interface configuration
+ingress: true
+ingress_port: 7680
+panel_icon: mdi:alpha-z-box
+panel_title: "GLM Terminal Pro"
+panel_admin: true
+
+# No host port mappings on purpose.
+# The web interface (container port 7680) is reachable through Home Assistant
+# ingress only; ttyd (7681) runs unauthenticated behind it, so publishing either
+# port on the host would expose a writable root terminal to the local network.
+# Ingress gives each add-on its own panel, so Claude / Codex / GLM Terminal Pro
+# can run side by side without any port remapping.
+
+# Add-on configuration options
+options:
+  auto_launch_claude: true
+  dangerously_skip_permissions: false
+  persistent_terminal_session: true
+  persistent_apk_packages: []
+  persistent_pip_packages: []
+  use_persistent_claude: false
+  auto_update_claude_on_start: false
+  claude_channel: latest
+  zai_auth_token: ""
+  zai_base_url: "https://api.z.ai/api/anthropic"
+  zai_model: "glm-5.3[1m]"
+
+schema:
+  auto_launch_claude: bool?
+  dangerously_skip_permissions: bool?
+  persistent_terminal_session: bool?
+  persistent_apk_packages:
+    - str?
+  persistent_pip_packages:
+    - str?
+  use_persistent_claude: bool?
+  auto_update_claude_on_start: bool?
+  claude_channel: "list(latest|stable)?"
+  zai_auth_token: password?
+  zai_base_url: str?
+  zai_model: str?
+
+# Volume mappings for file access
+map:
+  - config:rw    # Access to Home Assistant configuration files
+
+# API access for Home Assistant integration
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+auth_api: true
+
+# Service startup configuration
+startup: services

@@ -1,19 +1,24 @@
 # AI Terminal Add-ons for Home Assistant
 
-Home Assistant add-ons that run AI coding CLIs inside a web-based terminal embedded in your dashboard — with persistent authentication, persistent package management, image paste, and self-updating CLIs. Two add-ons are available and can be installed side by side:
+Home Assistant add-ons that run AI coding CLIs inside a web-based terminal embedded in your dashboard — with persistent authentication, persistent package management, image paste, and self-updating CLIs. Three add-ons are available and can be installed side by side:
 
 - **Claude Terminal Pro** (`claude-terminal/`) — Anthropic's Claude Code CLI
 - **Codex Terminal Pro** (`codex-terminal/`) — OpenAI's Codex CLI
+- **GLM Terminal Pro** (`glm-terminal/`) — the Claude Code CLI pointed at Z.AI's Anthropic-compatible API (GLM models); a copy of Claude Terminal Pro that only differs by endpoint
 
 ## Add the Repository
 
 1. Go to **Settings → Add-ons → Add-on Store**
 2. Open the three-dots menu (⋮) in the top-right and select **Repositories**
 3. Add: `https://github.com/sarpel/claude-code-ha`
-4. Install **Claude Terminal Pro** and/or **Codex Terminal Pro** from the store and start them
-5. Open the Web UI (sidebar icon or **OPEN WEB UI**) and sign in on first use (OAuth for Claude; API key or ChatGPT login for Codex)
+4. Install **Claude Terminal Pro**, **Codex Terminal Pro**, and/or **GLM Terminal Pro** from the store and start them
+5. Open the Web UI (sidebar icon or **OPEN WEB UI**) and sign in on first use (OAuth for Claude; API key or ChatGPT login for Codex; GLM reads its token from the `zai_auth_token` option — no interactive login)
 
-> Claude Code requires a Claude Pro/Max or Anthropic Console account; Codex CLI requires an OpenAI API key or ChatGPT plan. There is no `image:` key in the add-on configs, so Home Assistant **builds the add-ons locally from source** on your device — a fresh build always installs the latest CLI.
+> Claude Code requires a Claude Pro/Max or Anthropic Console account; Codex CLI requires an OpenAI API key or ChatGPT plan; GLM Terminal Pro requires a Z.AI API token. There is no `image:` key in the add-on configs, so Home Assistant **builds the add-ons locally from source** on your device — a fresh build always installs the latest CLI.
+
+### GLM Terminal Pro
+
+Same as Claude Terminal Pro, but `run.sh` exports `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL` and the `ANTHROPIC_DEFAULT_*_MODEL` overrides (from the `zai_*` options) before launching the CLI, so requests go to Z.AI's GLM models. Set `zai_auth_token` on the Configuration tab before first start. Options: `zai_auth_token` (required), `zai_base_url` (default `https://api.z.ai/api/anthropic`), `zai_model` (default `glm-5.3[1m]`).
 
 ## Claude Terminal Pro — Features
 
