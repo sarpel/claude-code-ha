@@ -5,9 +5,10 @@
 
 # Get Codex flags from environment
 get_codex_flags() {
-    local flags=""
+    # Use the same container-compatible startup for new and resumed sessions.
+    local flags="--no-daemon"
     if [ "${CODEX_DANGEROUS_MODE}" = "true" ]; then
-        flags="--dangerously-bypass-approvals-and-sandbox"
+        flags+=" --dangerously-bypass-approvals-and-sandbox"
         echo "⚠️  Running in DANGEROUS mode (no approvals, no sandbox)" >&2
     fi
     echo "$flags"

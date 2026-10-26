@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+### ✨ New Feature - ChatGPT cihaz koduyla giriş
+- **Home Assistant içinden OAuth girişi**: kimlik doğrulama menüsü `codex login --device-auth` ile bağlantı ve kod gösterir; port yönlendirmesi gerektirmez. Desteklenmeyen CLI sürümleri ve başarısız girişler açıklanır, kaydedilen kimlik dosyasının izinleri sınırlandırılır.
+
+### 🐛 Bug Fix - Konteynerde oturum başlatma
+- **Daemon olmadan çalışma**: otomatik başlatma, yeni oturum ve oturuma dönüş yollarında `--no-daemon` kullanılır; terminal oturumunu tmux korur.
+
+### 🔧 Technical - Node.js sürüm koşulu
+- **En az Node.js 22.23.4**: imaj derlemesinde eski Node.js paketlerinin seçilmesi engellenir.
+
 ## 1.0.7
 
 ### 📚 Documentation - Synchronize package and development guidance

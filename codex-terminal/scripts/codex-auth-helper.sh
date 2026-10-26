@@ -12,9 +12,9 @@ show_auth_menu() {
     echo "Codex home: ${CODEX_HOME:-~/.codex} (credentials persist here)"
     echo ""
     echo "Options:"
-    echo "  1) 🔑 Log in with an OpenAI API key (recommended for containers)"
+    echo "  1) 🔑 Log in with an OpenAI API key"
     echo "  2) 📁 Read API key from file (/config/openai-api-key.txt)"
-    echo "  3) 🌐 ChatGPT browser login (advanced — needs port forwarding)"
+    echo "  3) 🌐 ChatGPT OAuth with device code (recommended for HA / SSH)"
     echo "  4) ℹ️  Show login status"
     echo "  5) 🚪 Log out (remove stored credentials)"
     echo "  6) ❌ Exit"
@@ -81,25 +81,41 @@ login_from_file() {
     return 1
 }
 
-browser_login_info() {
+device_login() {
     echo ""
-    echo "🌐 ChatGPT browser login inside a container"
-    echo "═══════════════════════════════════════════"
+    echo "ChatGPT OAuth - headless device-code login"
     echo ""
-    echo "'codex login' starts a local OAuth server on port 1455 and the browser"
-    echo "redirect goes to localhost:1455 — which is inside this container, so a"
-    echo "normal browser login cannot complete through the Home Assistant UI."
+    echo "1. In ChatGPT Settings > Security, enable device-code login for Codex."
+    echo "   For a managed workspace, its administrator must allow this method."
+    echo "2. Keep this terminal open. Codex will display a browser link and a code."
+    echo "3. Open that link on your computer or phone and enter the displayed code."
+    echo "4. Return here; Codex will finish signing in automatically."
     echo ""
-    echo "Workaround (from a machine with a browser):"
-    echo "  1. SSH to your Home Assistant host with a port forward for 1455"
-    echo "     (e.g. ssh -L 1455:<HA-IP>:1455 user@host, with port 1455 exposed)"
-    echo "  2. Run 'codex login' here and open the printed URL in that browser"
+    echo "No callback port or SSH tunnel is needed. Do not share the code."
+    echo "Credentials remain in the add-on's persistent Codex home."
     echo ""
-    echo "For most users, the API key login (option 1) is much simpler."
-    echo ""
-    read -rp "Run 'codex login' now anyway? [y/N]: " answer
-    if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-        codex login
+
+    if ! codex login --help 2>&1 | grep -q -- '--device-auth'; then
+        echo "This Codex CLI does not support device-code login."
+        echo "Update the CLI, then try this option again."
+        return 1
+    fi
+
+    if codex login --device-auth; then
+        if [ -f "${CODEX_HOME:-/data/.config/codex}/auth.json" ]; then
+            chmod 600 "${CODEX_HOME:-/data/.config/codex}/auth.json"
+        fi
+        echo ""
+        echo "ChatGPT login completed. You can now start or resume a Codex session."
+        codex login status || true
+        return 0
+    else
+        local result=$?
+        echo ""
+        echo "Device-code login did not complete."
+        echo "Check the error above and ensure device-code login is enabled in ChatGPT."
+        echo "If the code expired, select this option again to request a fresh one."
+        return "$result"
     fi
 }
 
@@ -139,7 +155,7 @@ main() {
                 read -r
                 ;;
             3)
-                browser_login_info
+                device_login
                 echo ""
                 echo "Press Enter to continue..."
                 read -r

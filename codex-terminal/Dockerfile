@@ -4,7 +4,7 @@ FROM ${BUILD_FROM}
 # Install packages in a single layer to minimize image size
 # Node.js and npm kept for image-service dependency (and the npm fallback install)
 RUN apk add --no-cache \
-    nodejs \
+    'nodejs>=22.23.4' \
     npm \
     bash \
     curl \

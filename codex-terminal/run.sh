@@ -354,7 +354,8 @@ auto_install_packages() {
 get_codex_launch_command() {
     local auto_launch_codex
     local dangerously_bypass
-    local codex_flags=""
+    # Container sessions stay alive in tmux; avoid the incompatible PID-managed daemon.
+    local codex_flags="--no-daemon"
 
     # Get configuration values
     auto_launch_codex=$(bashio::config 'auto_launch_codex' 'true')
@@ -362,7 +363,7 @@ get_codex_launch_command() {
 
     # Build Codex flags
     if [ "$dangerously_bypass" = "true" ]; then
-        codex_flags="--dangerously-bypass-approvals-and-sandbox"
+        codex_flags+=" --dangerously-bypass-approvals-and-sandbox"
         bashio::log.warning "Codex will run with --dangerously-bypass-approvals-and-sandbox (no approvals, no sandbox)"
     fi
 
@@ -379,7 +380,7 @@ get_codex_launch_command() {
             echo "clear && /usr/local/bin/codex-session-picker"
         else
             bashio::log.warning "Session picker not found, falling back to auto-launch"
-            echo "clear && echo 'Welcome to Codex Terminal!' && echo '' && echo 'Starting Codex...' && sleep 1 && codex"
+            echo "clear && echo 'Welcome to Codex Terminal!' && echo '' && echo 'Starting Codex...' && sleep 1 && codex ${codex_flags}"
         fi
     fi
 }
